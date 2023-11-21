@@ -91,24 +91,34 @@ def check_admin_login_credentials(email, password):
         return False
 
 
-def create_admin_login_box():
+def create_admin_login_box(event=None):
+    root.destroy()
+    new_window = tk.Tk()
+    new_window.geometry('250x500')
+    new_window.title('Login')
     global admin_email_entry, admin_password_entry, admin_login_window
-    admin_login_window = tk.Toplevel(root)
-    admin_login_window.geometry("300x150")
-    admin_login_window.title("Login as Admin")
+    admin_login_box = tk.Frame(new_window, borderwidth=2, relief="ridge", padx=10, pady=10)
+    admin_login_box.pack(padx=20, pady=20)
 
-    admin_email_label = tk.Label(admin_login_window, text="Admin Email:")
+    admin_email_label = tk.Label(admin_login_box, text="Admin Email:")
     admin_email_label.pack(anchor="w")
-    admin_email_entry = tk.Entry(admin_login_window)
+    admin_email_entry = tk.Entry(admin_login_box)
     admin_email_entry.pack(fill="x", padx=10, pady=5)
 
-    admin_password_label = tk.Label(admin_login_window, text="Admin Password:")
+    admin_password_label = tk.Label(admin_login_box, text="Admin Password:")
     admin_password_label.pack(anchor="w")
-    admin_password_entry = tk.Entry(admin_login_window, show="*")
+    admin_password_entry = tk.Entry(admin_login_box, show="*")
     admin_password_entry.pack(fill="x", padx=10, pady=5)
 
-    admin_login_button = tk.Button(admin_login_window, text="Login", bg='lightgreen', command=admin_accounts)
+    admin_login_button = tk.Button(admin_login_box, text="Login", bg='lightgreen', command=admin_accounts)
     admin_login_button.pack(pady=10)
+
+    def homepage():
+        new_window.destroy()
+        os.system('python homepage.py')
+
+    homepage_button = tk.Button(admin_login_box, text="Back to Homepage", command=homepage)
+    homepage_button.pack(pady=10)
 
 
 def admin_accounts():
