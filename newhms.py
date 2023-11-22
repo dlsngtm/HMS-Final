@@ -19,6 +19,7 @@ search_date_entry = None
 search_time_var = None
 search_doctor_var = None
 date_entry = None
+full_name_entry = None
 
 # Add these global variables at the beginning of your code
 name_var = None
@@ -216,10 +217,10 @@ def save_appointment_to_database(appointment_info):
 login_window = None
 
 
-def create_login_box(event=None):
-    global email_entry, password_entry, login_window, signup_box  # Make signup_box global
-    login_box = tk.Frame(root, borderwidth=2, relief="ridge", padx=10, pady=10)
-    login_box.pack(padx=20, pady=20)
+def create_login_box():
+    global email_entry, password_entry, login_window, signup_box, root  # Add root to the global variables
+    login_box = tk.Frame(root, borderwidth=2, relief="ridge", padx=50, pady=25)
+    login_box.pack(padx=10, pady=10)
 
     email_label = tk.Label(login_box, text="Email Address:")
     email_label.pack(anchor="w")
@@ -234,19 +235,16 @@ def create_login_box(event=None):
     login_button = tk.Button(login_box, text="Login", command=login)
     login_button.pack(pady=10)
 
-    admin_login_button = tk.Button(root, borderwidth=2, relief="ridge", padx=10, pady=10, bg='lightgreen', text="Login as Admin", command=create_admin_login_box)
-    admin_login_button.pack(pady=10)
+    # Initialize the signup_box as None
+    signup_box = None
 
     # Hide the signup_box if it exists
     if signup_box:
         signup_box.pack_forget()
 
-    # Initialize the signup_box as None
-    signup_box = None
-
 
 def create_signup_box():
-    global full_name_entry, age_entry, sex_var, email_entry, password_entry, signup_box
+    global full_name_entry, age_entry, sex_var, email_entry, password_entry, signup_box, root
 
     # Check if the main application window is still available
     if root.winfo_exists():
@@ -284,13 +282,6 @@ def create_signup_box():
         create_acc_button = tk.Button(signup_box, text="Create Account", bg='lightgreen', command=signup)
         create_acc_button.pack(pady=10)
 
-        login_page_button = tk.Label(signup_box, text="Already have an account? Log in here.", fg='blue', cursor='hand2', bg='lightblue')
-        login_page_button.bind("<Button-1>", create_login_box)
-        login_page_button.pack()
-
-    else:
-        print("Main window has been destroyed. Cannot create signup box.")
-
 
 def is_valid_email(email):
     # Define a regular expression pattern to validate Gmail addresses
@@ -299,27 +290,27 @@ def is_valid_email(email):
 
 
 def create_admin_login_box():
-    global admin_email_entry, admin_password_entry, admin_login_window
-    admin_login_window = tk.Toplevel(root)
-    admin_login_window.geometry("300x150")
-    admin_login_window.title("Login as Admin")
+    global admin_email_entry, admin_password_entry, admin_login_box, root  # Add root to the global variables
+    admin_login_box = tk.Frame(root, borderwidth=2, relief="ridge", padx=50, pady=25)
+    admin_login_box.pack(padx=10, pady=10)
 
-    admin_email_label = tk.Label(admin_login_window, text="Admin Email:")
+    admin_email_label = tk.Label(admin_login_box, text="Admin Email:")
     admin_email_label.pack(anchor="w")
-    admin_email_entry = tk.Entry(admin_login_window)
-    admin_email_entry.pack(fill="x", padx=10, pady=5)
+    admin_email_entry = tk.Entry(admin_login_box)
+    admin_email_entry.pack(fill="x", padx=5, pady=10)
 
-    admin_password_label = tk.Label(admin_login_window, text="Admin Password:")
+    admin_password_label = tk.Label(admin_login_box, text="Admin Password:")
     admin_password_label.pack(anchor="w")
-    admin_password_entry = tk.Entry(admin_login_window, show="*")
-    admin_password_entry.pack(fill="x", padx=10, pady=5)
+    admin_password_entry = tk.Entry(admin_login_box, show="*")
+    admin_password_entry.pack(fill="x", padx=5, pady=10)
 
-    admin_login_button = tk.Button(admin_login_window, text="Login", bg='lightgreen', command=admin_accounts)
+    admin_login_button = tk.Button(admin_login_box, text="Login", bg='lightgreen', command=admin_accounts)
     admin_login_button.pack(pady=10)
+
 
 # Function to create the signup window
 def open_signup_window():
-    global signup_box
+    global signup_box, root  # Add root to the global variables
     create_signup_box()
 
 
@@ -335,7 +326,8 @@ def delete_appointment(appointment_id, cursor, connection):
     except Exception as e:
         messagebox.showerror("Error", f"Error deleting appointment: {str(e)}")
 
-def create_admin_window(cursor, mydb):
+def admin_appointment_window(cursor, mydb):
+    global appointment_window, appointments, date_entry, root  # Add root to the global variables
     admin_window = tk.Toplevel(root)
     admin_window.title("Admin Window")
     admin_window.geometry("700x500")  # Adjusted size
@@ -419,7 +411,7 @@ def create_admin_window(cursor, mydb):
     logout_button.grid(row=2, column=3, pady=(10, 0), sticky="w")
     
 def login():
-    global email_entry, password_entry
+    global email_entry, password_entry, full_name_entry
     email = email_entry.get()
     password = password_entry.get()
     if email and password:
@@ -441,7 +433,7 @@ def login():
 
 
 def signup():
-    global full_name, age, sex
+    global full_name, age, sex, full_name_entry
     full_name = full_name_entry.get()
     age = age_entry.get()
     sex = sex_var.get()
@@ -481,7 +473,7 @@ def admin_accounts():
     if entered_email in admin_credentials and entered_password == admin_credentials[entered_email]:
         admin_logged_in = True
         admin_window()
-        admin_login_window.destroy()
+        admin_login_box.destroy()
     else:
         messagebox.showerror("Admin Login Failed", "Invalid email or password")
 
@@ -491,7 +483,7 @@ cursor = mydb.cursor()
 def admin_window():
     global admin_logged_in
     if admin_logged_in:
-        create_admin_window(cursor, mydb)
+        admin_appointment_window(cursor, mydb)
     else:
         messagebox.showerror("Admin Access Denied", "You need to log in as an admin first.")
 connection=mydb.commit()
@@ -507,9 +499,13 @@ def admin_logout():
 def hide_main_window():
     root.withdraw()
 
+# Create a separate function to destroy the main window
+def destroy_main_window():
+    root.destroy()
+
 # Create a function to show the homepage
 def show_homepage():
-    root.deiconify()
+    destroy_main_window()
 
 # Function to display About HMS window
 def hms_info():
@@ -528,18 +524,14 @@ appointments = {}
 
 
 def appointment_window(full_name, age, sex):
-
-    # Create an appointment frame within the main window
     global appointment_window  # Declare the appointment_window as global
     global appointments  # Declare appointments as global
     global date_entry
+    global full_name_entry
     appointment_window = tk.Toplevel(root)
     appointment_window.geometry("500x700")
     appointment_window.title("Appointment Scheduling")
 
-    full_name_entry.insert(0, full_name)  # Set the value of name_entry
-    age_entry.insert(0, age)  # Set the value of age_entry
-    sex_var.set(sex)
 
     # Create an appointment frame within the appointment window
     appointment_frame = tk.Frame(appointment_window, borderwidth=2, relief="ridge", padx=10, pady=10)
@@ -550,19 +542,16 @@ def appointment_window(full_name, age, sex):
     # Hide the main window
     root.withdraw()
 
-    def hide_login_box():
-        login_box.place_forget()
 
-    hide_login_box()
-    
     def schedule_appointment():
         global appointments
         global date_entry
+        global full_name_entry
         
         patient_name = full_name_entry.get()
         patient_age = age_entry.get()
         contact_number = contact_entry.get()
-        sex = sex_var.get()
+        sex = sex_entry.get()
         selected_doctor = doctor_var.get()
         selected_slot = slot_var.get()
         appointment_date_str = date_entry.get_date()
@@ -596,12 +585,40 @@ def appointment_window(full_name, age, sex):
             }    
 
             # Call the function to save the appointment to the database
-            if save_appointment_to_database(appointment_info):
+            appointment_id = save_appointment_to_database(appointment_info)
+            if appointment_id is not None:
                 appointments[patient_name] = appointment_info
                 # Show appointment summary
                 show_appointment_summary(appointment_info)
+                # Close the appointment window after showing the summary
+                close_appointment_window()
         else:
             messagebox.showerror("Invalid Information", "Please fill in all required fields.")
+
+    # Create an entry widget for full_name
+    full_name_label = tk.Label(appointment_window, text="Full Name:")
+    full_name_label.pack()
+    full_name_entry = tk.Entry(appointment_window)
+    full_name_entry.pack()
+    full_name_entry.insert(0, full_name)
+    full_name_label.pack_forget()
+    full_name_entry.pack_forget()
+
+    age_label = tk.Label(appointment_window, text="Age:")
+    age_label.pack()
+    age_entry = tk.Entry(appointment_window)
+    age_entry.pack()
+    age_entry.insert(0, age)
+    age_label.pack_forget()
+    age_entry.pack_forget()
+
+    sex_label = tk.Label(appointment_window, text="Sex:")
+    sex_label.pack()
+    sex_entry = tk.Entry(appointment_window)
+    sex_entry.pack()
+    sex_entry.insert(0, sex)
+    sex_label.pack_forget()
+    sex_entry.pack_forget()
 
     contact_label = tk.Label(appointment_window, text="Contact Number:")
     contact_label.pack()
@@ -662,7 +679,7 @@ def appointment_window(full_name, age, sex):
     schedule_button.pack()
 
     # Make sure to destroy the appointment frame properly when it's closed
-    appointment_window.protocol("WM_DELETE_WINDOW", show_main_window)
+    appointment_window.protocol("WM_DELETE_WINDOW", close_appointment_window)
     appointment_window.mainloop()
 
     root.withdraw()
@@ -677,6 +694,7 @@ def show_main_window():
 
 def close_appointment_window():
     appointment_window.destroy()
+    show_main_window()
 
 
 summary_window = None
@@ -993,31 +1011,6 @@ def show_search_results(results):
     for result in results:
         search_results_tree.insert("", "end", values=(result[1], result[9], result[8], result[7], result[5], result[6]))
 
-
-def doctor_window():
-    doctor_window = tk.Toplevel()
-    doctor_window.title("Doctor Appointment Page")
-
-    doctor_frame = tk.Frame(doctor_window)
-    doctor_frame.pack()
-
-    doctor_id = "your_doctor_id_here"  # Replace with the actual doctor's ID
-
-    appointments = get_appointments_for_doctor(doctor_id)  # Fetch appointments for the given doctor_id
-
-    if appointments:
-        for appointment in appointments:
-            appointment_label = tk.Label(doctor_frame, text=f"Patient: {appointment[1]}, Date: {appointment[7]}, Time: {appointment[6]}")
-            appointment_label.pack()
-    else:
-        no_appointments_label = tk.Label(doctor_frame, text="No appointments for this doctor.")
-        no_appointments_label.pack()
-
-    logout_button = tk.Button(doctor_window, text="Log Out", command=doctor_window.destroy)
-    logout_button.pack()
-
-    doctor_window.mainloop()
-
 class PDF(FPDF):
     def header(self):
         self.set_font('Arial', 'B', 12)
@@ -1062,9 +1055,9 @@ def show_main_window():
     # Show the main window again
     root.deiconify()
 
-    # Create a new search window when "Search Appointments" is clicked
-    create_search_window()
-
+def close_main_window():
+    # Close the main window
+    root.destroy()
 
 # Create the main window
 root = tk.Tk()
