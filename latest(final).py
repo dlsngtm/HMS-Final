@@ -219,26 +219,26 @@ def show_main_window_callback():
 
 
 def create_login_box():
-    global email_entry, password_entry, login_box, root
+    global email_entry, password_entry, login_window, root
 
     # Hide the main window
     root.iconify()
 
-    login_box = tk.Toplevel()
-    login_box.title("Login as User")
-    login_box.geometry("500x550")
+    login_window = tk.Toplevel()
+    login_window.title("Login as User")
+    login_window.geometry("500x550")
 
     # Background Image
     background_image = Image.open("D:\DELL E7450\Desktop\Final Project\HMS (Final)\login.png")
     background_image = background_image.resize((500, 550), Image.Resampling.NEAREST)
     background_photo = ImageTk.PhotoImage(background_image)
 
-    background_label = tk.Label(login_box, image=background_photo)
+    background_label = tk.Label(login_window, image=background_photo)
     background_label.place(x=0, y=0, relwidth=1, relheight=1)
     background_label.image = background_photo
 
     # Add space at the top before the login information
-    top_space_label = tk.Label(login_box, text="Login", font=("Arial", 16), bg="white")
+    top_space_label = tk.Label(login_window, text="Login", font=("Arial", 16), bg="white")
     top_space_label.pack(pady=10)
 
     # Logo Image
@@ -247,36 +247,36 @@ def create_login_box():
     logo_photo = ImageTk.PhotoImage(logo_image)
 
     # Display the logo
-    logo_label = tk.Label(login_box, image=logo_photo, bg='white')
+    logo_label = tk.Label(login_window, image=logo_photo, bg='white')
     logo_label.image = logo_photo
     logo_label.pack()
 
     def make_label_transparent(label):
         label.configure(bg="white")
 
-    email_label = tk.Label(login_box, text="Email Address:", anchor="w", justify="center", bg='white', font=("Arial", 12))
+    email_label = tk.Label(login_window, text="Email Address:", anchor="w", justify="center", bg='white', font=("Arial", 12))
     email_label.pack(pady=10)
     make_label_transparent(email_label)
-    email_entry = tk.Entry(login_box, font=("Arial", 12))
+    email_entry = tk.Entry(login_window, font=("Arial", 12))
     email_entry.pack(pady=10, ipadx=10)
 
-    password_label = tk.Label(login_box, text="Password:", anchor="w", justify="center", bg='white', font=("Arial", 12))
+    password_label = tk.Label(login_window, text="Password:", anchor="w", justify="center", bg='white', font=("Arial", 12))
     password_label.pack(pady=10)
     make_label_transparent(password_label)
-    password_entry = tk.Entry(login_box, show="*", font=("Arial", 12))
+    password_entry = tk.Entry(login_window, show="*", font=("Arial", 12))
     password_entry.pack(pady=10, ipadx=10)
 
-    login_button = tk.Button(login_box, text="Login", command=login, bg="yellowgreen", font=("Arial", 12))
+    login_button = tk.Button(login_window, text="Login", command=login, bg="yellowgreen", font=("Arial", 12))
     login_button.pack(pady=10)
 
     def back_to_main():
-        login_box.destroy()
+        login_window.destroy()
         root.deiconify()
 
-    back_button = tk.Button(login_box, text="Close", command=back_to_main, bg="gray", font=("Arial", 12))
+    back_button = tk.Button(login_window, text="Close", command=back_to_main, bg="gray", font=("Arial", 12))
     back_button.pack(pady=10)
 
-    login_box.mainloop
+    login_window.mainloop
 
 
 
@@ -285,6 +285,9 @@ def create_login_box():
 
 # Callback function to show the main window again
 def show_main_window_callback():
+    global login_window
+    if login_window:
+        login_window.destroy()  # Destroy the login window instead of hiding it
     root.deiconify()
 
 
@@ -678,8 +681,8 @@ def login():
             
             if user_info:
                 full_name, age, sex = user_info
-                login_box.destroy()
-                appointment_window(full_name, age, sex)
+                login_window.destroy()
+                open_appointment_window(full_name, age, sex)
             else:
                 messagebox.showerror("Login Failed", "Invalid email or password")
         else:
@@ -705,7 +708,7 @@ def signup():
         if insert_users_into_db(full_name, age, sex, email, password):
             messagebox.showinfo("Signup Successful", "Account created successfully!")
             remove_signup()
-            appointment_window(full_name, age, sex)
+            open_appointment_window(full_name, age, sex)
         else:
             messagebox.showerror("Signup Failed", "Failed to create an account. Please try again.")
     else:
@@ -945,13 +948,13 @@ def show_main_window_from_info(info_window):
 appointments = {}
 
 
-def appointment_window(full_name, age, sex):
+def open_appointment_window(full_name, age, sex):
     global appointment_window  # Declare the appointment_window as global
     global appointments  # Declare appointments as global
     global date_entry
     global full_name_entry
     appointment_window = tk.Toplevel(root)
-    appointment_window.geometry("500x650")
+    appointment_window.geometry("500x700")
     appointment_window.title("Appointment Scheduling")
 
     background_image = Image.open("D:\DELL E7450\Desktop\Final Project\HMS (Final)\signup.png")
@@ -979,7 +982,7 @@ def appointment_window(full_name, age, sex):
         global appointments
         global date_entry
         global full_name_entry
-    
+
         patient_name = full_name_entry.get()
         patient_age = age_entry.get()
         contact_number = contact_entry.get()
@@ -1002,12 +1005,6 @@ def appointment_window(full_name, age, sex):
         elif selected_reason == "Medication":
             amount = "1,200 pesos"
 
-         # Check if there is an available slot for the selected doctor
-        selected_doctor_slots = doctors[selected_doctor]
-        if selected_slot not in selected_doctor_slots:
-            messagebox.showerror("Doctor Slot Full", "The selected doctor's slot is already full. Please choose another slot.")
-            return
-
         if full_name and patient_age and contact_number and formatted_appointment_date:
             appointment_info = {
                 "Name": full_name,
@@ -1023,17 +1020,13 @@ def appointment_window(full_name, age, sex):
             }
 
             # Call the function to save the appointment to the database
-            appointment_id = save_appointment_to_database(appointment_info)
-            if appointment_id is not None:
+            if save_appointment_to_database(appointment_info):
                 appointments[patient_name] = appointment_info
-                # Close the appointment window
-                close_appointment_window()
-            
-                # Show appointment summary only if there is an available slot
-                if selected_slot in selected_doctor_slots:
-                    show_appointment_summary(appointment_info)
+                # Show appointment summary
+                show_appointment_summary(appointment_info)
         else:
             messagebox.showerror("Invalid Information", "Please fill in all required fields.")
+
 
     # Create an entry widget for full_name
     full_name_label = tk.Label(appointment_window, text="Full Name:")
@@ -1126,6 +1119,13 @@ def appointment_window(full_name, age, sex):
 
     schedule_button = tk.Button(appointment_window, text="Summary", command=schedule_appointment, bg="green", fg="white", font=("Arial", 12))
     schedule_button.pack(pady=5)
+
+    def back_to_main():
+        login_window.destroy()
+        root.deiconify()
+
+    back_button = tk.Button(appointment_window, text="Close", command=back_to_main, bg="gray", font=("Arial", 12))
+    back_button.pack(pady=10)
 
     # Make sure to destroy the appointment frame properly when it's closed
     appointment_window.protocol("WM_DELETE_WINDOW", close_appointment_window)
