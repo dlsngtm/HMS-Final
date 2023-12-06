@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import messagebox, scrolledtext
+from tkinter import messagebox
 from PIL import Image, ImageTk
 import mysql.connector
 from tkinter import ttk, filedialog  # for tree
@@ -7,9 +7,7 @@ from tkcalendar import Calendar
 from datetime import datetime
 from fpdf import FPDF
 from collections import defaultdict
-from tkinter import PhotoImage
 import re  # for pdf data or doctor limits
-import tkinter.font as tkFont
 
 # Maximum appointments per doctor's slot
 MAX_APPOINTMENTS_PER_SLOT = 2
@@ -38,7 +36,7 @@ appointment_date = None
 amount = None
 
 
-doctor_appointments = {}  # Dictionary to store doctor appointments and their counts
+doctor_appointments = {}
 
 bg_color = "#E0E0E0"  # Light gray
 mydb = mysql.connector.connect(
@@ -503,11 +501,11 @@ def create_admin_window(cursor, mydb):
     tree.heading(4, text="Contact")
     tree.heading(5, text="Sex")
     tree.heading(6, text="Reason")
-    tree.heading(7, text="Doctor")
-    tree.heading(8, text="Time")
-    tree.heading(9, text="Date")
-    tree.heading(10, text="Amount")
-    tree.heading(11, text="Disease")
+    tree.heading(7, text="Disease")
+    tree.heading(8, text="Doctor")
+    tree.heading(9, text="Time")
+    tree.heading(10, text="Date")
+    tree.heading(11, text="Amount")
 
     # Set column widths
     tree.column(1, width=40)  
@@ -613,7 +611,7 @@ def create_admin_window(cursor, mydb):
         search_button.grid(row=1, column=1, padx=0, pady=10, sticky="w")
 
         global search_results_tree  # Declare search_results_tree as global
-        search_results_tree = ttk.Treeview(search_frame, columns=("ID", "Name", "Age", "Contact Number", "Sex", "Reason", "Doctor", "Time", "Date", "Amount", "Disease"),
+        search_results_tree = ttk.Treeview(search_frame, columns=("ID", "Name", "Age", "Contact Number", "Sex", "Reason", "Disease", "Doctor", "Time", "Date", "Amount"),
                                             show="headings", height=15)
         search_results_tree.heading("#1", text="ID")
         search_results_tree.heading("#2", text="Name")
@@ -621,11 +619,11 @@ def create_admin_window(cursor, mydb):
         search_results_tree.heading("#4", text="Contact Number")
         search_results_tree.heading("#5", text="Sex")
         search_results_tree.heading("#6", text="Reason")
-        search_results_tree.heading("#7", text="Doctor")
-        search_results_tree.heading("#8", text="Time")
-        search_results_tree.heading("#9", text="Date")
-        search_results_tree.heading("#10", text="Amount")
-        search_results_tree.heading("#11", text="Disease")
+        search_results_tree.heading("#7", text="Disease")
+        search_results_tree.heading("#8", text="Doctor")
+        search_results_tree.heading("#9", text="Time")
+        search_results_tree.heading("#10", text="Date")
+        search_results_tree.heading("#11", text="Amount")
 
         search_results_tree.grid(row=2, column=0, columnspan=2, padx=10, pady=(20, 10), sticky="nsew")
 
@@ -734,8 +732,6 @@ def signup():
 
 
 # Initialize the admin login state
-
-
 admin_logged_in = False
 
 
@@ -1187,7 +1183,7 @@ def show_appointment_summary(appointment_info):
         # Create the update window
         update_window = tk.Toplevel(root)
         update_window.title("Update Appointment")
-        update_window.geometry("500x400")
+        update_window.geometry("500x450")
 
         # Function to save the updated appointment to the database
         def save_updated_appointment():
@@ -1204,6 +1200,14 @@ def show_appointment_summary(appointment_info):
             # Check the selected reason and update the amount accordingly
             selected_reason = update_values.get("Reason", "")
             update_values["Amount"] = "500 pesos" if selected_reason == "Checkup" else "1,200 pesos"
+
+            if not update_values.get("Doctor"):
+                messagebox.showerror("Error", "Please select a doctor.")
+                return
+
+            if not update_values.get("Appointment Time"):
+                messagebox.showerror("Error", "Please select an appointment time.")
+                return
 
             # Prepare the update query
             update_query = """
@@ -1223,16 +1227,16 @@ def show_appointment_summary(appointment_info):
 
             # Convert values to appropriate data types
             update_values = {
-                "Name": str(update_values.get("Name", "")),  
-                "Age": int(update_values.get("Age", 0)),    
+                "Name": str(update_values.get("Name", "")),
+                "Age": int(update_values.get("Age", 0)),
                 "Contact Number": int(update_values.get("Contact Number", 0)),
-                "Sex": str(update_values.get("Sex", "")),    
+                "Sex": str(update_values.get("Sex", "")),
                 "Reason": str(update_values.get("Reason", "")),
-                "Disease": str(update_values.get("Disease", "")), 
-                "Doctor": str(update_values.get("Doctor", "")),  
-                "Appointment Time": str(update_values.get("Appointment Time", "")),  
-                "Appointment Date": str(update_values.get("Appointment Date", "")),  
-                "Amount": str(update_values.get("Amount", "")),  
+                "Disease": str(update_values.get("Disease", "")),
+                "Doctor": str(update_values.get("Doctor", "")),
+                "Appointment Time": str(update_values.get("Appointment Time", "")),
+                "Appointment Date": str(update_values.get("Appointment Date", "")),
+                "Amount": str(update_values.get("Amount", "")),
             }
 
             # Print for debugging purposes
@@ -1282,6 +1286,14 @@ def show_appointment_summary(appointment_info):
             update_date_button = tk.Button(date_picker_window, text="Update Date", command=update_selected_date, bg="green", fg="white", font=("Arial", 12))
             update_date_button.pack(pady=10)
         
+        # Function to update the available slots when the doctor changes
+        def update_slot_options(*args):
+            selected_doctor = doctor_var.get()
+            # Update the slots when the doctor changes
+            slot_option_menu['menu'].delete(0, 'end')  # Clear the current slots
+            for slot in doctors[selected_doctor]:
+                slot_option_menu['menu'].add_command(label=slot, command=tk._setit(slot_var, slot))
+        
         # Create entry widgets for other fields to allow editing
         updated_info = {}
         row_index = 0  # Initialize the row index
@@ -1313,6 +1325,26 @@ def show_appointment_summary(appointment_info):
                 date_picker_button.grid(row=row_index, column=2, pady=5, padx=10, sticky="w")
 
                 updated_info[key] = date_var
+            elif key == "Doctor":
+                label = tk.Label(update_window, text=f"{key}:", font=("Arial", 12))
+                label.grid(row=row_index, column=0, pady=5, padx=10, sticky="w")
+
+                doctor_var = tk.StringVar(value=value)
+                doctor_option_menu = tk.OptionMenu(update_window, doctor_var, *doctors.keys())
+                doctor_option_menu.grid(row=row_index, column=1, pady=5, padx=10, sticky="w")
+
+                doctor_var.trace("w", update_slot_options)  # Update slots when the doctor changes
+
+                updated_info[key] = doctor_var
+            elif key == "Appointment Time":
+                label = tk.Label(update_window, text=f"{key}:", font=("Arial", 12))
+                label.grid(row=row_index, column=0, pady=5, padx=10, sticky="w")
+
+                slot_var = tk.StringVar(value=value)
+                slot_option_menu = tk.OptionMenu(update_window, slot_var, *doctors[doctor_var.get()])
+                slot_option_menu.grid(row=row_index, column=1, pady=5, padx=10, sticky="w")
+
+                updated_info[key] = slot_var
             else:
                 label = tk.Label(update_window, text=f"{key}:", font=("Arial", 12))
                 label.grid(row=row_index, column=0, pady=5, padx=10, sticky="w")
@@ -1329,6 +1361,7 @@ def show_appointment_summary(appointment_info):
                     entry.insert(0, value)
 
                 entry.grid(row=row_index, column=1, pady=5, padx=10, sticky="w")
+
                 updated_info[key] = entry
 
             row_index += 1
