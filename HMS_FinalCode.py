@@ -54,7 +54,8 @@ cursor = mydb.cursor()
 # Function to insert a new user into the database during signup
 def insert_users_into_db(full_name, age, sex, email, password):
     try:
-        query = "INSERT INTO users (full_name, age, sex, email, password) VALUES (%s, %s, %s, %s, %s)"
+        query = "INSERT INTO users (full_name, age, sex, email, password)\
+            VALUES (%s, %s, %s, %s, %s)"
         cursor.execute(query, (full_name, age, sex, email, password))
         mydb.commit()
         return True
@@ -100,7 +101,8 @@ def check_admin_login_credentials(email, password):
 
 def get_appointments_for_doctor(doctor_id):
     try:
-        query = "SELECT id, doctor, appointment_time, appointment_date FROM appointments WHERE doctor_id = %s"
+        query = "SELECT id, doctor, appointment_time, appointment_date FROM\
+            appointments WHERE doctor_id = %s"
         cursor.execute(query, (doctor_id,))
         appointments = cursor.fetchall()
         return appointments
@@ -114,7 +116,8 @@ def initialize_doctor_appointments():
     doctor_appointments = defaultdict(dict)
 
     try:
-        query = "SELECT doctor, appointment_time, appointment_date FROM appointments"
+        query = "SELECT doctor, appointment_time, appointment_date\
+            FROM appointments"
         cursor.execute(query)
         appointments = cursor.fetchall()
 
@@ -133,23 +136,27 @@ def initialize_doctor_appointments():
         print("Error while initializing doctor_appointments:", str(e))
 
 
-# Call the function to initialize doctor_appointments at the beginning of the program
 initialize_doctor_appointments()
 
 
 def save_appointment_to_database(appointment_info):
     try:
-        # Reformat the appointment date to match the expected format ("%Y-%m-%d")
-        appointment_date = datetime.strptime(appointment_info["Appointment Date"], "%Y-%m-%d")
+        appointment_date = datetime.strptime(appointment_info["Appointment\
+                                                            Date"], "%Y-%m-%d")
         formatted_appointment_date = appointment_date.strftime("%Y-%m-%d")
 
-        query_existing = "SELECT COUNT(*) FROM appointments WHERE doctor = %s AND appointment_time = %s AND appointment_date = %s"
-        cursor.execute(query_existing, (appointment_info["Doctor"], appointment_info["Appointment Time"], formatted_appointment_date))
+        query_existing = "SELECT COUNT(*) FROM appointments WHERE doctor = %s\
+            AND appointment_time = %s AND appointment_date = %s"
+        cursor.execute(query_existing, (appointment_info["Doctor"],
+                                        appointment_info["Appointment Time"],
+                                        formatted_appointment_date))
         existing_count = cursor.fetchone()[0]
 
         if existing_count >= MAX_APPOINTMENTS_PER_SLOT:
-            print("Doctor has reached the appointment limit for this slot and date.")
-            messagebox.showerror("Appointment Limit Exceeded", "The doctor has reached the maximum appointment limit for this slot and date.")
+            print("Doctor has reached the appointment limit for this slot\
+                  and date.")
+            messagebox.showerror("Appointment Limit Exceeded", "The doctor\
+            has reached the maximum appointment limit for this slot and date.")
             return False
 
         # Check if the total appointments for the slot and date exceed the limit
@@ -1582,4 +1589,4 @@ display_homepage()
 
 
 root.mainloop()
-mydb.close() 
+mydb.close()
